@@ -2,3 +2,6 @@
 TELEGRAM_BOT_TOKEN=123456:ABCDEF...
 WEBHOOK_SECRET=ganti-dengan-string-acak-panjang
 ALLOWED_USERS=123456789
+# Kunci AES-GCM 32 byte untuk enkripsi secret di KV (base64).
+# Buat dengan: node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+ENCRYPTION_KEY=ganti-dengan-base64-32-byte-acak

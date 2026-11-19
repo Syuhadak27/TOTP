@@ -3,6 +3,8 @@ export interface Env {
   CLEANUP_QUEUE: Queue<CleanupJob>;
   TELEGRAM_BOT_TOKEN: string;
   WEBHOOK_SECRET: string;
+  /** Kunci AES-GCM untuk mengenkripsi secret di KV (base64, 32 byte). */
+  ENCRYPTION_KEY: string;
   ALLOWED_USERS?: string;
   WEBHOOK_PATH?: string;
 }

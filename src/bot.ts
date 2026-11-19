@@ -358,7 +358,7 @@ async function handleAdd(args: string, env: Env, userId: number, chatId: number)
   }
 
   const wasExisting = existing.includes(service);
-  await store.saveSecret(env.AUTH_KV, userId, service, secret);
+  await store.saveSecret(env, userId, service, secret);
   await sendMenu(
     env,
     chatId,
@@ -379,7 +379,7 @@ async function showCode(
   back: string,
   editMessageId?: number,
 ): Promise<void> {
-  const secret = await store.getSecret(env.AUTH_KV, userId, service);
+  const secret = await store.getSecret(env, userId, service);
   if (secret === null) {
     const text = `Layanan ${service} belum terdaftar. Cek /list.`;
     if (editMessageId !== undefined) {
@@ -458,18 +458,18 @@ async function handleDelete(args: string, env: Env, userId: number, chatId: numb
     return;
   }
 
-  const secret = await store.getSecret(env.AUTH_KV, userId, service);
+  const secret = await store.getSecret(env, userId, service);
   if (secret === null) {
     await sendMenu(env, chatId, `Layanan ${service} tidak ditemukan.`, footerKeyboard());
     return;
   }
 
-  await store.removeSecret(env.AUTH_KV, userId, service);
+  await store.removeSecret(env, userId, service);
   await sendMenu(env, chatId, `✅ Layanan ${service} dihapus.`, footerKeyboard());
 }
 
 async function handleExport(env: Env, userId: number, chatId: number): Promise<void> {
-  const services = await store.listServices(env.AUTH_KV, userId);
+  const services = await store.listServices(env, userId);
   if (services.length === 0) {
     await sendMenu(
       env,
@@ -631,7 +631,7 @@ async function handleCallback(callback: TelegramCallbackQuery, env: Env): Promis
     if (deleteYesMatch) {
       const service = await serviceAt(env, userId, Number(deleteYesMatch[1]));
       if (!service) return;
-      await store.removeSecret(env.AUTH_KV, userId, service);
+      await store.removeSecret(env, userId, service);
       await editMenu(
         env,
         chatId,
@@ -902,11 +902,11 @@ async function importBackup(
   }
 
   if (replace && existing.length > 0) {
-    await store.removeAll(env.AUTH_KV, userId);
+    await store.removeAll(env, userId);
   }
 
   await Promise.all(
-    services.map((item) => store.saveSecret(env.AUTH_KV, userId, item.service, item.secret)),
+    services.map((item) => store.saveSecret(env, userId, item.service, item.secret)),
   );
 
   await sendMenu(

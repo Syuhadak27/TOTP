@@ -28,3 +28,4 @@ WEBHOOK_PATH = "/webhook"
 # JANGAN simpan token di sini. Gunakan secret:
 #   npx wrangler secret put TELEGRAM_BOT_TOKEN
 #   npx wrangler secret put WEBHOOK_SECRET
+#   npx wrangler secret put ENCRYPTION_KEY   # kunci AES-GCM untuk secret di KV

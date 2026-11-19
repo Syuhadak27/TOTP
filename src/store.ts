@@ -1,5 +1,8 @@
 /** Helper KV. Format key: user_<telegram_id>_<service_name> */
 
+import type { Env } from './types';
+import { decryptSecret, encryptSecret, isEncrypted } from './crypto';
+
 export interface StoredService {
   service: string;
   key: string;
@@ -29,46 +32,49 @@ export async function listServiceNames(kv: KVNamespace, userId: number): Promise
   return names.sort((a, b) => a.localeCompare(b));
 }
 
-/** Ambil daftar layanan beserta secret (dipakai /list dan /export). */
-export async function listServices(kv: KVNamespace, userId: number): Promise<StoredService[]> {
-  const prefix = prefixFor(userId);
-  const services: StoredService[] = [];
+/**
+ * Ambil satu secret sudah didekripsi. Data lama berupa teks biasa otomatis
+ * dimigrasikan ke ciphertext saat pertama kali dibaca.
+ */
+export async function getSecret(env: Env, userId: number, service: string): Promise<string | null> {
+  const key = keyFor(userId, service);
+  const stored = await env.AUTH_KV.get(key);
+  if (stored === null) return null;
 
-  for (const service of await listServiceNames(kv, userId)) {
-    const secret = await kv.get(keyFor(userId, service));
+  if (!isEncrypted(stored)) {
+    await env.AUTH_KV.put(key, await encryptSecret(env, stored));
+    return stored;
+  }
+  return decryptSecret(env, stored);
+}
+
+/** Simpan secret dalam bentuk terenkripsi. */
+export async function saveSecret(
+  env: Env,
+  userId: number,
+  service: string,
+  secret: string,
+): Promise<void> {
+  await env.AUTH_KV.put(keyFor(userId, service), await encryptSecret(env, secret));
+}
+
+/** Ambil daftar layanan beserta secret (sudah didekripsi) untuk /export. */
+export async function listServices(env: Env, userId: number): Promise<StoredService[]> {
+  const services: StoredService[] = [];
+  for (const service of await listServiceNames(env.AUTH_KV, userId)) {
+    const secret = await getSecret(env, userId, service);
     if (secret !== null) services.push({ service, key: keyFor(userId, service), secret });
   }
   return services;
 }
 
-export async function getSecret(
-  kv: KVNamespace,
-  userId: number,
-  service: string,
-): Promise<string | null> {
-  return kv.get(keyFor(userId, service));
+export async function removeSecret(env: Env, userId: number, service: string): Promise<void> {
+  await env.AUTH_KV.delete(keyFor(userId, service));
 }
 
-export async function saveSecret(
-  kv: KVNamespace,
-  userId: number,
-  service: string,
-  secret: string,
-): Promise<void> {
-  await kv.put(keyFor(userId, service), secret);
-}
-
-export async function removeSecret(
-  kv: KVNamespace,
-  userId: number,
-  service: string,
-): Promise<void> {
-  await kv.delete(keyFor(userId, service));
-}
-
-export async function removeAll(kv: KVNamespace, userId: number): Promise<void> {
-  const keys = await listServiceNames(kv, userId);
-  await Promise.all(keys.map((service) => kv.delete(keyFor(userId, service))));
+export async function removeAll(env: Env, userId: number): Promise<void> {
+  const keys = await listServiceNames(env.AUTH_KV, userId);
+  await Promise.all(keys.map((service) => env.AUTH_KV.delete(keyFor(userId, service))));
 }
 
 /**

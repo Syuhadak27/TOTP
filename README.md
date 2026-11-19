@@ -19,6 +19,7 @@ Berjalan sepenuhnya di Cloudflare Workers + KV, **tanpa dependency runtime**
     ├── bot.ts             # parsing perintah, whitelist, import/export
     ├── cleanup.ts         # penjadwalan auto-delete (delay 30 detik)
     ├── telegram.ts        # helper Telegram API (send/delete/getFile)
+    ├── crypto.ts          # enkripsi/dekripsi secret KV (AES-GCM)
     ├── store.ts           # operasi KV: user_<telegram_id>_<service>
     ├── totp.ts            # RFC 6238: Base32 decode + HMAC-SHA1 + truncation
     └── types.ts           # tipe Env, update Telegram, job antrean
@@ -78,10 +79,18 @@ npx wrangler secret put TELEGRAM_BOT_TOKEN
 
 npx wrangler secret put WEBHOOK_SECRET
 # tempel string acak panjang, misal hasil: openssl rand -hex 32
+
+npx wrangler secret put ENCRYPTION_KEY
+# tempel base64 32 byte acak, misal:
+# node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 ```
 
 `WEBHOOK_SECRET` akan dikirim sebagai header `X-Telegram-Bot-Api-Secret-Token`
 dan diverifikasi tiap request. Request tanpa/pasangan token salah ditolak `403`.
+
+`ENCRYPTION_KEY` dipakai untuk mengenkripsi secret sebelum disimpan ke KV.
+**Simpan kunci ini di tempat aman** — tanpa kunci yang sama, secret lama tidak
+bisa dibaca lagi. Kunci ini juga tidak bisa dibaca balik dari Cloudflare.
 
 ## 4. Deploy
 
@@ -267,5 +276,10 @@ dengan `.dev.vars`). Perubahan webhook perlu di-set ulang setiap kali URL tunnel
   membuat OTP Anda. Bot tidak pernah menampilkan secret utuh di `/list` maupun `/code`.
 - Gunakan `WEBHOOK_SECRET` yang acak dan panjang agar endpoint tidak bisa dipanggil pihak lain.
 - `WEBHOOK_PATH` bisa diganti ke path yang tidak mudah ditebak, mis. `/hook-<acak>`.
-- KV tidak terenkripsi tambahan oleh aplikasi ini; secret disimpan apa adanya.
+- Nilai secret di KV **tidak disimpan sebagai teks biasa**, melainkan ciphertext
+  AES-GCM (`enc:v1:<iv>.<ciphertext>`) memakai `ENCRYPTION_KEY`. Data lama yang
+  masih berupa teks biasa otomatis dienkripsi ulang saat pertama kali dibaca.
+  Nama layanan tetap menjadi bagian dari kunci KV (`user_<id>_<service>`) agar
+  daftar layanan bisa ditampilkan.
+- Jangan pernah mengganti/hilangkan `ENCRYPTION_KEY` setelah data tersimpan.
 - Jika bot diubah webhook-nya, pastikan `secret_token` ikut diperbarui.
