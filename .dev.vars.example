@@ -1,0 +1,4 @@
+# Salin ke .dev.vars untuk `wrangler dev` (file ini tidak perlu di-commit)
+TELEGRAM_BOT_TOKEN=123456:ABCDEF...
+WEBHOOK_SECRET=ganti-dengan-string-acak-panjang
+ALLOWED_USERS=123456789

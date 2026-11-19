@@ -1,0 +1,30 @@
+name = "telegram-totp-bot"
+main = "src/index.ts"
+compatibility_date = "2026-11-19"
+
+# Salin file ini menjadi wrangler.toml, lalu isi id KV hasil:
+#   npx wrangler kv namespace create AUTH_KV
+[[kv_namespaces]]
+binding = "AUTH_KV"
+id = "<id-kv-namespace>"
+preview_id = "<preview-id-opsional>"
+
+# Auto-delete pesan Telegram (default 30 detik, /list 60 detik).
+[[queues.producers]]
+queue = "totp-message-cleanup"
+binding = "CLEANUP_QUEUE"
+
+[[queues.consumers]]
+queue = "totp-message-cleanup"
+max_batch_size = 10
+max_batch_timeout = 5
+max_retries = 3
+
+[vars]
+# Daftar Telegram ID yang diizinkan, dipisah koma.
+ALLOWED_USERS = "123456789,987654321"
+WEBHOOK_PATH = "/webhook"
+
+# JANGAN simpan token di sini. Gunakan secret:
+#   npx wrangler secret put TELEGRAM_BOT_TOKEN
+#   npx wrangler secret put WEBHOOK_SECRET

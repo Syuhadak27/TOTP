@@ -1,0 +1,11 @@
+node_modules/
+.dev.vars
+.wrangler/
+dist/
+*.log
+
+# Konfigurasi & arsip lokal berisi ID KV / kredensial — jangan di-commit.
+wrangler.toml
+*.zip
+
+.nomedia

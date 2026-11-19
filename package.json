@@ -1,0 +1,18 @@
+{
+  "name": "telegram-totp-bot",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "postdeploy": "node scripts/set-commands.mjs",
+    "commands:set": "node scripts/set-commands.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261118.1",
+    "typescript": "^5.0.0",
+    "wrangler": "^4.0.0"
+  }
+}
